@@ -2,105 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import Graph from 'graphology';
 import Sigma from 'sigma';
 import { useAuth0 } from '@auth0/auth0-react';
-
-// Sample ML papers data
-const papersData = [
-  {
-    id: 'transformer',
-    label: 'Attention is All You Need',
-    authors: 'Vaswani et al.',
-    year: 2017,
-    importance: 0.95,
-    citations: 68000,
-  },
-  {
-    id: 'bert',
-    label: 'BERT: Pre-training of Deep Bidirectional',
-    authors: 'Devlin et al.',
-    year: 2018,
-    importance: 0.92,
-    citations: 45000,
-  },
-  {
-    id: 'gpt',
-    label: 'Language Models are Unsupervised Multitask',
-    authors: 'Radford et al.',
-    year: 2019,
-    importance: 0.90,
-    citations: 25000,
-  },
-  {
-    id: 'resnet',
-    label: 'Deep Residual Learning for Image Recognition',
-    authors: 'He et al.',
-    year: 2015,
-    importance: 0.93,
-    citations: 80000,
-  },
-  {
-    id: 'vit',
-    label: 'An Image is Worth 16x16 Words',
-    authors: 'Dosovitskiy et al.',
-    year: 2020,
-    importance: 0.88,
-    citations: 15000,
-  },
-  {
-    id: 'diffusion',
-    label: 'Denoising Diffusion Probabilistic Models',
-    authors: 'Ho et al.',
-    year: 2020,
-    importance: 0.86,
-    citations: 8000,
-  },
-  {
-    id: 'gat',
-    label: 'Graph Attention Networks',
-    authors: 'Veličković et al.',
-    year: 2017,
-    importance: 0.82,
-    citations: 5000,
-  },
-  {
-    id: 'gcn',
-    label: 'Semi-Supervised Classification with GCNs',
-    authors: 'Kipf & Welling',
-    year: 2016,
-    importance: 0.84,
-    citations: 12000,
-  },
-  {
-    id: 'attention',
-    label: 'Effective Approaches to Attention-based NMT',
-    authors: 'Luong et al.',
-    year: 2015,
-    importance: 0.80,
-    citations: 18000,
-  },
-  {
-    id: 'unet',
-    label: 'U-Net: Convolutional Networks for Biomedical Image Segmentation',
-    authors: 'Ronneberger et al.',
-    year: 2015,
-    importance: 0.87,
-    citations: 25000,
-  },
-];
-
-// Citation relationships (edges)
-const citations = [
-  { source: 'bert', target: 'transformer' },
-  { source: 'gpt', target: 'transformer' },
-  { source: 'vit', target: 'transformer' },
-  { source: 'vit', target: 'resnet' },
-  { source: 'diffusion', target: 'gat' },
-  { source: 'gat', target: 'gcn' },
-  { source: 'gcn', target: 'attention' },
-  { source: 'bert', target: 'attention' },
-  { source: 'unet', target: 'resnet' },
-  { source: 'gpt', target: 'bert' },
-  { source: 'diffusion', target: 'transformer' },
-];
+import { papersData, citations } from '../mockData/papersData';
 
 const MLVisualization: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,31 +15,93 @@ const MLVisualization: React.FC = () => {
     // Create graph
     const graph = new Graph();
 
-    // Add nodes (papers)
+    // Add nodes (papers) with organic, clustered layout
+    const centerX = 0;
+    const centerY = 0;
+    const baseRadius = 50;
+    
+    // Group nodes by color for clustering
+    const colorGroups: { [key: string]: typeof papersData } = {};
     papersData.forEach((paper) => {
-      graph.addNode(paper.id, {
-        label: paper.label,
-        size: 15 + paper.importance * 20,
-        color: `hsl(${200 + paper.year % 60}, ${70 + paper.citations / 1000}%, 50%)`,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
+      if (!colorGroups[paper.color]) {
+        colorGroups[paper.color] = [];
+      }
+      colorGroups[paper.color].push(paper);
+    });
+    
+    // Position nodes in color clusters
+    Object.entries(colorGroups).forEach(([_color, group], groupIndex) => {
+      const groupAngle = (groupIndex / Object.keys(colorGroups).length) * 2 * Math.PI;
+      const clusterCenterX = centerX + Math.cos(groupAngle) * baseRadius;
+      const clusterCenterY = centerY + Math.sin(groupAngle) * baseRadius;
+      
+      group.forEach((paper, idx) => {
+        // Create organic cluster with some spread
+        const clusterSpread = 20;
+        const angle = (idx / group.length) * 2 * Math.PI;
+        const distance = (Math.random() * 0.5 + 0.3) * clusterSpread;
+        const x = clusterCenterX + Math.cos(angle) * distance;
+        const y = clusterCenterY + Math.sin(angle) * distance;
+        
+        // Varied node sizes - some larger, most medium/small
+        const minSize = 6;
+        const maxSize = 18;
+        const nodeSize = minSize + (paper.importance * (maxSize - minSize));
+        
+        graph.addNode(paper.id, {
+          label: paper.label, // Hide labels for cleaner look
+          size: nodeSize,
+          x: x,
+          y: y,
+          color: paper.color,
+          labelColor: '#ffffff',      // Text color
+          labelSize: 12,              // Font size
+          labelWeight: 'normal',      // Font weight
+        });
       });
     });
 
-    // Add edges (citations)
+    // Add edges (citations) - light gray, thin lines
     citations.forEach((citation, index) => {
-      graph.addEdgeWithKey(`edge_${index}`, citation.source, citation.target);
+      graph.addEdgeWithKey(`edge_${index}`, citation.source, citation.target, {
+        color: '#d1d5db', // Light gray
+        size: 1,
+      });
     });
 
-    // Initialize Sigma
+    // Initialize Sigma with colorful, modern settings
     sigmaRef.current = new Sigma(graph, containerRef.current, {
       renderEdgeLabels: false,
-      defaultNodeColor: '#ffffff',
-      defaultEdgeColor: '#ffffff',
-      labelDensity: 0.25,
-      labelRenderedSizeThreshold: 6,
-      labelFont: 'Inter, sans-serif',
+      defaultNodeColor: '#14b8a6',
+      defaultEdgeColor: '#d1d5db',
+      labelDensity: 1, // Hide labels for cleaner look
+      labelRenderedSizeThreshold: 0, // Effectively hide all labels
+      labelColor: { attribute: 'color', color: '#ffffff' },        // Global label color
+      labelSize: 12, // Global label size
+      zIndex: true,
+      minCameraRatio: 0.1,
+      maxCameraRatio: 10,
+      allowInvalidContainer: false,
+      // Node reducer - preserve colors
+      nodeReducer: (node, data) => {
+        const nodeData = graph.getNodeAttributes(node);
+        return {
+          ...nodeData,
+          color: nodeData.color || data.color,
+        };
+      },
+      // Edge reducer - light gray edges
+      edgeReducer: (_edge, data) => {
+        return {
+          ...data,
+          color: '#d1d5db',
+          size: 1,
+        };
+      },
     });
+
+    // Force refresh to ensure colors are applied
+    sigmaRef.current.refresh();
 
     return () => {
       sigmaRef.current?.kill();
@@ -145,25 +109,69 @@ const MLVisualization: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col gap-6 flex-1">
-      <div className="text-center animate-slide-in-down">
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
+    <div className="flex flex-col gap-6 flex-1 max-w-7xl mx-auto w-full">
+      {/* Header Section - Minimal */}
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl md:text-5xl font-semibold text-white mb-1 tracking-tight">
           ML Papers Universe
         </h1>
-        <p className="text-lg text-white font-normal">
-          {user?.name ? `Welcome, ${user.name}!` : 'Explore'} — Interactive visualization of influential machine learning papers
+        <p className="text-base md:text-lg text-white/60 font-light max-w-2xl mx-auto">
+          {user?.name ? `Welcome back, ${user.name}!` : 'Welcome!'} Explore the interconnected landscape of machine learning research
         </p>
       </div>
-      <div
-        ref={containerRef}
-        className="animate-fade-in w-full rounded-3xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
-        style={{
-          height: 'calc(100vh - 200px)',
-          background: 'linear-gradient(135deg, #389cff 0%, #1a1f2e 100%)',
-        }}
-      />
-      <div className="text-center p-6 bg-slate-800/40 rounded-xl border border-blue-400/20 text-[0.95rem] text-white backdrop-blur-md">
-        <p>💡 Hover over a paper to explore | Node size = importance | Colors = year & citation count</p>
+
+      {/* Main Graph Container - Modern Minimal Design */}
+      <div className="relative flex-1 min-h-[600px] rounded-2xl overflow-hidden bg-black/30 backdrop-blur-sm border border-white/5 shadow-xl">
+        <style>{`
+          .sigma-container canvas {
+            background: transparent !important;
+            filter: none !important;
+          }
+        `}</style>
+        <div
+          ref={containerRef}
+          className="w-full h-full sigma-container"
+          style={{
+            minHeight: '600px',
+            background: 'radial-gradient(circle at center, rgba(168, 85, 247, 0.03) 0%, transparent 70%)',
+          }}
+        />
+        
+        {/* Subtle overlay gradient for depth */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/10" />
+      </div>
+
+      {/* Info Cards - Minimal Design */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-white/3 backdrop-blur-sm border border-white/5 rounded-lg p-4 hover:bg-white/5 transition-all duration-200">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-white/50"></div>
+            <h3 className="text-xs font-medium text-white/80">Node Size</h3>
+          </div>
+          <p className="text-xs text-white/50 leading-relaxed">
+            Node size reflects paper importance and impact
+          </p>
+        </div>
+        
+        <div className="bg-white/3 backdrop-blur-sm border border-white/5 rounded-lg p-4 hover:bg-white/5 transition-all duration-200">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-white/50"></div>
+            <h3 className="text-xs font-medium text-white/80">Connections</h3>
+          </div>
+          <p className="text-xs text-white/50 leading-relaxed">
+            Edges represent citation relationships
+          </p>
+        </div>
+        
+        <div className="bg-white/3 backdrop-blur-sm border border-white/5 rounded-lg p-4 hover:bg-white/5 transition-all duration-200">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-white/50"></div>
+            <h3 className="text-xs font-medium text-white/80">Interaction</h3>
+          </div>
+          <p className="text-xs text-white/50 leading-relaxed">
+            Drag to explore • Zoom to focus • Hover for details
+          </p>
+        </div>
       </div>
     </div>
   );

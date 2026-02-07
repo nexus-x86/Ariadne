@@ -3,14 +3,26 @@ import { useState, useEffect } from 'react';
 
 const LandingPage = () => {
   const { loginWithRedirect } = useAuth0();
-  const [scrolled, setScrolled] = useState(false);
+  const [scrollState, setScrollState] = useState(0); // 0 = ARIADNE, 1 = Why?, 2 = How?
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      setScrolled(scrollPosition > 200);
+      const viewportHeight = window.innerHeight;
+      
+      // Give each section a full viewport of scroll space
+      const whyThreshold = viewportHeight * 1.5;
+      const howThreshold = viewportHeight * 2.2;
+      
+      if (scrollPosition > howThreshold) {
+        setScrollState(2); // How?
+      } else if (scrollPosition > whyThreshold) {
+        setScrollState(1); // Why?
+      } else {
+        setScrollState(0); // ARIADNE
+      }
     };
-
+  
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -411,46 +423,69 @@ const LandingPage = () => {
       {/* Fixed Main Content - Hero Section */}
       <main className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
         <div className="text-center max-w-4xl mx-auto px-8 w-full pointer-events-auto">
-          {/* Main Heading */}
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-8 tracking-tight drop-shadow-lg">
-            ARIADNE
-          </h1>
+          {/* Main Heading - changes on scroll with smooth animation */}
+          <div className="relative mb-8">
+            <h1 className={`text-6xl md:text-7xl lg:text-8xl font-bold text-white tracking-tight drop-shadow-lg absolute inset-0 transition-opacity duration-700 ease-in-out ${
+              scrollState === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}>
+              ARIADNE
+            </h1>
+            <h1 className={`text-6xl md:text-7xl lg:text-8xl font-bold text-white tracking-tight drop-shadow-lg absolute inset-0 transition-opacity duration-700 ease-in-out ${
+              scrollState === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}>
+              Why?
+            </h1>
+            <h1 className={`text-6xl md:text-7xl lg:text-8xl font-bold text-white tracking-tight drop-shadow-lg absolute inset-0 transition-opacity duration-700 ease-in-out ${
+              scrollState === 2 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}>
+              How?
+            </h1>
+            {/* Spacer to maintain height */}
+            <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-white tracking-tight drop-shadow-lg opacity-0 pointer-events-none">
+              ARIADNE
+            </h1>
+          </div>
 
           {/* Description - swaps on scroll with smooth animation */}
           <div className="min-h-[200px] relative">
+            {/* ARIADNE description */}
             <div 
               className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                !scrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                scrollState === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
               <p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-2xl mx-auto font-light">
                 Discover the future of academic research with Ariadne — an ArXiV paper recommendation system powered by Graph Neural Network link prediction. Navigate the vast landscape of scientific literature with intelligent, context-aware recommendations.
               </p>
             </div>
+            {/* Why? description */}
             <div 
               className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                scrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                scrollState === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
-              <div className="text-lg md:text-xl text-white/80 leading-relaxed max-w-2xl mx-auto font-light space-y-4">
-                <p>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                </p>
-                <p>
-                  Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                </p>
-                <p>
-                  Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-                </p>
-              </div>
+              <p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-2xl mx-auto font-light">
+                The academic research landscape is vast and constantly expanding. Researchers struggle to discover relevant papers that align with their interests and current work. Traditional keyword-based search methods often miss important connections and fail to capture the nuanced relationships between research papers. Ariadne addresses this challenge by leveraging the power of graph neural networks to understand and predict meaningful connections in the academic literature network.
+              </p>
+            </div>
+            {/* How? description */}
+            <div 
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                scrollState === 2 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+              }`}
+            >
+              <p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-2xl mx-auto font-light">
+                We built Ariadne using Apache Spark for distributed data processing and PyTorch Geometric for training our Graph Neural Network (GNN). Apache Spark enabled us to efficiently process and transform the massive ArXiv dataset, handling millions of papers and their citation relationships at scale. We then used PyTorch Geometric to construct and train a GNN model that learns to predict meaningful links between papers by understanding the graph structure of academic citations. The model captures complex patterns in how research papers relate to each other, enabling intelligent, context-aware recommendations that go beyond simple keyword matching.
+              </p>
             </div>
           </div>
         </div>
       </main>
 
       {/* Scrollable content area */}
-      <div className="relative z-0" style={{ minHeight: '200vh' }}>
+      <div className="relative z-0" style={{ minHeight: '300vh' }}>
         <div className="h-screen"></div>
+        <div className="min-h-screen"></div>
         <div className="min-h-screen"></div>
       </div>
     </div>
