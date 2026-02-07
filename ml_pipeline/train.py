@@ -8,8 +8,7 @@ from src.data_loader import load_ogbn_arxiv
 
 from contextlib import contextmanager
 
-
-WITH_WANDB = False
+WITH_WANDB = True
 BATCH_SIZE = 1024
 NUM_NEIGHBORS = [16, 8]
 LEARNING_RATE = 0.01
@@ -22,6 +21,7 @@ if WITH_WANDB:
         project="embedder-gnn-at-cxc",
         config={
             "learning_rate": LEARNING_RATE,
+            "notes": "test run with no masking"
         }
     )
 
@@ -67,6 +67,7 @@ valid_loader = NeighborLoader(data, num_neighbors=NUM_NEIGHBORS, batch_size=BATC
 loss_fn = torch.nn.MSELoss()
 
 model = EmbedderGNNv2(EMBED_SIZE, HIDDEN_DIM, EMBED_SIZE, dropout=0.2)
+mask_embedding = torch.nn.Parameter(torch.randn(EMBED_SIZE), requires_grad=True)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
@@ -77,10 +78,13 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training"):
     model.train()
     for batch in tqdm(train_loader, desc=f"Epoch {epoch}"):
         x, edge_index = batch.x, batch.edge_index
-        y = batch.y
+        masked_x = x.clone().detach()
+        masked_x[0] = mask_embedding
+        target_embedding = x[0]
         optimizer.zero_grad()
         out = model(x, edge_index)
-        loss = loss_fn(out, y)
+        pred_embedding = out[0]
+        loss = loss_fn(pred_embedding, target_embedding)
         total_train_loss += loss.item()
         loss.backward()
         optimizer.step()
@@ -88,12 +92,16 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training"):
     model.eval()
     for batch in tqdm(valid_loader, desc=f"Validating Epoch {epoch}"):
         x, edge_index = batch.x, batch.edge_index
-        y = batch.y
+        masked_x = x.clone().detach()
+        masked_x[0] = mask_embedding
+        target_embedding = x[0]
         out = model(x, edge_index)
-        loss = loss_fn(out, y)
+        pred_embedding = out[0]
+        loss = loss_fn(pred_embedding, target_embedding)
         total_valid_loss += loss.item()
-    
-    wandb.log({"train_loss": total_train_loss / len(train_loader), "valid_loss": total_valid_loss / len(valid_loader)})
+    if WITH_WANDB:
+        wandb.log({"train_loss": total_train_loss / len(train_loader),
+                   "valid_loss": total_valid_loss / len(valid_loader)})
 
 if WITH_WANDB:
     wandb.finish()
