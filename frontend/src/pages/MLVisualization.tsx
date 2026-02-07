@@ -145,26 +145,24 @@ const MLVisualization: React.FC = () => {
   }, []);
 
   return (
-    <div className="ml-visualization-container">
-      <div className="ml-header">
-        <h1 className="ml-title">ML Papers Universe</h1>
-        <p className="ml-subtitle">
+    <div className="flex flex-col gap-6 flex-1">
+      <div className="text-center animate-slide-in-down">
+        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
+          ML Papers Universe
+        </h1>
+        <p className="text-lg text-white font-normal">
           {user?.name ? `Welcome, ${user.name}!` : 'Explore'} — Interactive visualization of influential machine learning papers
         </p>
       </div>
       <div
         ref={containerRef}
-        className="ml-graph-container"
+        className="animate-fade-in w-full rounded-3xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
         style={{
-          width: '100%',
           height: 'calc(100vh - 200px)',
           background: 'linear-gradient(135deg, #389cff 0%, #1a1f2e 100%)',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8)',
         }}
       />
-      <div className="ml-info">
+      <div className="text-center p-6 bg-slate-800/40 rounded-xl border border-blue-400/20 text-[0.95rem] text-white backdrop-blur-md">
         <p>💡 Hover over a paper to explore | Node size = importance | Colors = year & citation count</p>
       </div>
     </div>
