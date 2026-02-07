@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Graph from 'graphology';
 import Sigma from 'sigma';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -120,7 +120,10 @@ const citations = [
 const MLVisualization: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sigmaRef = useRef<Sigma | null>(null);
-  const { user } = useAuth0();
+  const { user, getAccessTokenSilently } = useAuth0();
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -220,6 +223,82 @@ const MLVisualization: React.FC = () => {
             <p className="legend-text" style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
               Hover over papers to explore their connections
             </p>
+          </div>
+
+          <div className="legend-section upload-section">
+            <h4 className="legend-title">Upload Paper</h4>
+            <p className="legend-text">Submit a PDF to add it to the processing queue</p>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => {
+                setUploadStatus(null);
+                const f = e.target.files && e.target.files[0];
+                setFile(f || null);
+              }}
+              style={{ marginTop: '0.5rem' }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', alignItems: 'center' }}>
+              <button
+                className="button"
+                disabled={!file || uploading}
+                onClick={async () => {
+                  if (!file) {
+                    setUploadStatus('Please choose a PDF file first.');
+                    return;
+                  }
+                  setUploading(true);
+                  setUploadStatus('Uploading...');
+                  try {
+                    const form = new FormData();
+                    form.append('file', file, file.name);
+
+                    const headers: Record<string, string> = {};
+                    if (getAccessTokenSilently) {
+                      try {
+                        const token = await getAccessTokenSilently();
+                        if (token) headers['Authorization'] = `Bearer ${token}`;
+                      } catch (err) {
+                        // token retrieval is optional; continue without token
+                      }
+                    }
+
+                    const res = await fetch('http://localhost:8000/api/upload', {
+                      method: 'POST',
+                      body: form,
+                      headers,
+                    });
+
+                    if (!res.ok) {
+                      const text = await res.text();
+                      setUploadStatus(`Upload failed: ${res.status} ${text}`);
+                    } else {
+                      setUploadStatus('Upload successful — processing started.');
+                      setFile(null);
+                      // Optionally: trigger refresh of graph or show queued status
+                    }
+                  } catch (err: any) {
+                    setUploadStatus(`Upload error: ${err?.message || String(err)}`);
+                  } finally {
+                    setUploading(false);
+                  }
+                }}
+              >
+                {uploading ? 'Uploading…' : 'Upload PDF'}
+              </button>
+              <button
+                className="button"
+                onClick={() => {
+                  setFile(null);
+                  setUploadStatus(null);
+                }}
+                disabled={uploading}
+              >
+                Clear
+              </button>
+            </div>
+            {file && <div style={{ marginTop: '0.5rem', color: '#cbd5e0' }}>{file.name}</div>}
+            {uploadStatus && <div style={{ marginTop: '0.5rem', color: '#ffffff' }}>{uploadStatus}</div>}
           </div>
         </div>
       </div>
