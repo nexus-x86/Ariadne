@@ -7,7 +7,7 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 # OGB Datasets (Prevents uploading GBs of data)
-dataset/
+data/
 *.zip
 *.gz
 
