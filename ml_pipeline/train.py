@@ -78,8 +78,6 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training"):
     model.train()
     for batch in tqdm(train_loader, desc=f"Epoch {epoch}"):
         x, edge_index = batch.x, batch.edge_index
-        masked_x = x.clone().detach()
-        masked_x[0] = mask_embedding
         target_embedding = x[0]
         optimizer.zero_grad()
         out = model(x, edge_index)
@@ -92,8 +90,6 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training"):
     model.eval()
     for batch in tqdm(valid_loader, desc=f"Validating Epoch {epoch}"):
         x, edge_index = batch.x, batch.edge_index
-        masked_x = x.clone().detach()
-        masked_x[0] = mask_embedding
         target_embedding = x[0]
         out = model(x, edge_index)
         pred_embedding = out[0]
@@ -101,7 +97,10 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training"):
         total_valid_loss += loss.item()
     if WITH_WANDB:
         wandb.log({"train_loss": total_train_loss / len(train_loader),
-                   "valid_loss": total_valid_loss / len(valid_loader)})
+                   "valid_loss": total_valid_loss / len(valid_loader),
+                   "mask_embedding": model.mask_embed.norm().item(),
+                   "mask_embedding_grad": model.mask_embed.grad.norm().item()})
+    torch.save(model.state_dict(), f"models/model_v1.pth")
 
 if WITH_WANDB:
     wandb.finish()
