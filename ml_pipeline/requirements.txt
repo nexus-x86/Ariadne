@@ -3,8 +3,6 @@ torch-geometric
 ogb
 wandb
 tqdm
-torch-sparse
-torch-scatter
 dotenv
 aiohttp
 pandas
