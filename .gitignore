@@ -7,12 +7,13 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 # OGB Datasets (Prevents uploading GBs of data)
-dataset/
+data/
 *.zip
 *.gz
 
 # --- Node / React ---
 node_modules/
+frontend/.vite/
 dist/
 build/
 .eslintcache
