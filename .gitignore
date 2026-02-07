@@ -1,1 +1,4 @@
 .venv
+ariadne_venv/
+
+.env
