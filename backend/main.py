@@ -3,7 +3,7 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import papers, upload, user
+from routers import papers, upload, user
 import numpy as np
 
 app = FastAPI(
