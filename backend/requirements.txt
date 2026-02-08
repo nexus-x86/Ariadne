@@ -4,3 +4,4 @@ fastapi[standard]
 python-multipart
 uvicorn[standard]
 arxiv
+chromadb
