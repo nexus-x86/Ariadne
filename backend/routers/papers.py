@@ -124,9 +124,9 @@ def get_for_you_papers(
     credentials=Depends(security),
 ):
     """
-    Return n papers for the For You page: get user's click history from Auth0 (max 5),
-    average their embeddings, return n nearest nodes by cosine similarity.
-    If no Bearer token or invalid token, treats as no history and returns 50 papers (fallback).
+    Return papers for the For You page: top 35 by cosine similarity to user's click history
+    (from Auth0), plus 15 random papers (excluding the top 35). Total up to 50.
+    If no Bearer token or invalid token, treats as no history. Random papers have no score.
     """
     history: list[str] = []
     if credentials and credentials.credentials:
@@ -166,6 +166,8 @@ def get_for_you_papers(
     scores = embeddings @ avg
     # Descending; exclude nodes we don't have mag_id for, and exclude user's history
     history_set = {int(x) for x in history if isinstance(x, str) and x.isdigit()}
+    n_similar = 35
+    n_random = 15
     candidate_nodes = []
     for idx in np.argsort(-scores):
         idx_int = int(idx)
@@ -174,19 +176,29 @@ def get_for_you_papers(
         mag_url = _node_id_to_mag_id_url(idx_int)
         if mag_url and paper_service.get_title_by_mag_id(mag_url):
             candidate_nodes.append(idx_int)
-        if len(candidate_nodes) >= n:
+        if len(candidate_nodes) >= n_similar:
             break
 
     papers = []
-    for node_id in candidate_nodes[:n]:
+    for node_id in candidate_nodes[:n_similar]:
         mag_id = _node_id_to_mag_id_url(node_id)
         if not mag_id:
             continue
         title = paper_service.get_title_by_mag_id(mag_id) or "—"
-        papers.append({"mag_id": mag_id, "title": title})
+        papers.append({
+            "mag_id": mag_id,
+            "title": title,
+            "score": float(scores[node_id]),
+        })
 
-    # Fallback: if we got no papers (e.g. no history + sparse mapping), return random
-    if not papers:
-        papers = paper_service.get_random_papers(n=n)
+    # Add 15 random papers (excluding those already in the top 35)
+    similar_mag_ids = {p["mag_id"] for p in papers}
+    random_candidates = paper_service.get_random_papers(n=80)
+    for p in random_candidates:
+        if len(papers) >= n_similar + n_random:
+            break
+        if p["mag_id"] not in similar_mag_ids:
+            papers.append({"mag_id": p["mag_id"], "title": p["title"]})
+            similar_mag_ids.add(p["mag_id"])
 
     return {"papers": papers, "count": len(papers)}

@@ -105,7 +105,14 @@ const ForYou: React.FC = () => {
               <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-white/90 transition-colors">
                 {paper.title}
               </h3>
-              <p className="text-xs text-white/50">OpenAlex · View details</p>
+              <div className="flex items-center gap-3 text-xs text-white/50">
+                {paper.score != null && (
+                  <span className="text-teal-400/90 font-medium">
+                    Match: {(paper.score * 100).toFixed(0)}%
+                  </span>
+                )}
+                <span>OpenAlex · View details</span>
+              </div>
             </button>
           ))}
         </div>

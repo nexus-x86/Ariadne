@@ -1,6 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
-export type ForYouPaper = { mag_id: string; title: string };
+export type ForYouPaper = { mag_id: string; title: string; score?: number };
 export type ForYouResponse = { papers: ForYouPaper[]; count: number };
 
 export type PaperInfo = { mag_id: string; title: string | null; doi_url: string | null; abstract: string | null };
