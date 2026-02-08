@@ -3,6 +3,8 @@ import Graph from 'graphology';
 import Sigma from 'sigma';
 import { useAuth0 } from '@auth0/auth0-react';
 
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+
 // Sample ML papers data
 const papersData = [
   {
@@ -263,7 +265,7 @@ const MLVisualization: React.FC = () => {
                       }
                     }
 
-                    const res = await fetch('http://localhost:8000/api/upload', {
+                    const res = await fetch(`${API_BASE}/api/upload`, {
                       method: 'POST',
                       body: form,
                       headers,
