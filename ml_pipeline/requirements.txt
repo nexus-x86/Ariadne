@@ -7,3 +7,4 @@ dotenv
 aiohttp
 pandas
 google-generativeai
+faiss-cpu
