@@ -8,7 +8,7 @@ router = APIRouter(prefix="/api/papers", tags=["papers"])
 
 @router.get("/paper-info")
 def get_paper_info(mag_id: str = Query(..., description="MAG/OpenAlex id")):
-    """Look up paper title and DOI URL by MAG id."""
+    """Look up paper title, DOI URL, and abstract by MAG id."""
     result = paper_service.get_paper_info_by_mag_id(mag_id)
     if result["title"] is None and result["doi_url"] is None:
         raise HTTPException(status_code=404, detail=f"No paper found for MAG id: {mag_id}")
